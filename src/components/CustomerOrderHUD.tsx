@@ -1,8 +1,23 @@
-import { Clock, Flame, Star, Trophy, Volume2, VolumeX } from 'lucide-react';
+import {
+  Clock,
+  Flame,
+  Music,
+  Music2,
+  Star,
+  Trophy,
+  Volume2,
+  VolumeX,
+  Zap,
+} from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { INGREDIENT_MAP, getRecipeById } from '../data/menuOrders';
+import { INGREDIENT_MAP } from '../data/menuOrders';
 import type { FeedbackMessage, GameState } from '../logic/gameState';
-import { isSoundEnabled, toggleSound } from '../utils/audioFeedback';
+import {
+  isBgmEnabled,
+  isSoundEnabled,
+  toggleBgm,
+  toggleSound,
+} from '../utils/audioFeedback';
 
 function formatTime(sec: number): string {
   const s = Math.ceil(sec);
@@ -81,16 +96,31 @@ function FeedbackBanner({ feedback }: { feedback: FeedbackMessage | null }) {
   );
 }
 
+const PRESET_LABEL = {
+  easy: '🟢 Dễ',
+  normal: '🟡 Vừa',
+  hard: '🔴 Khó',
+  rush: '⚡ Siêu tốc',
+  custom: '⚙️ Tùy biến',
+};
+
 export default function CustomerOrderHUD({ state }: { state: GameState }) {
-  const { order, stats } = state;
-  const recipe = order ? getRecipeById(order.recipeId) : null;
+  const { order, stats, difficulty } = state;
+  const recipe = order ? order.recipe : null;
   const added = new Set(state.addedIngredients);
   const patience = order ? order.timeRemainingSec / order.timeLimitSec : 0;
-  const [muted, setMuted] = useState(!isSoundEnabled());
+
+  const [soundMuted, setSoundMuted] = useState(!isSoundEnabled());
+  const [bgmMuted, setBgmMuted] = useState(!isBgmEnabled());
 
   const handleToggleSound = () => {
     const enabled = toggleSound();
-    setMuted(!enabled);
+    setSoundMuted(!enabled);
+  };
+
+  const handleToggleBgm = () => {
+    const enabled = toggleBgm();
+    setBgmMuted(!enabled);
   };
 
   const patienceColor =
@@ -118,7 +148,9 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
           icon={
             <Flame
               size={22}
-              className={stats.combo > 1 ? 'animate-flame text-yellow-300' : 'text-orange-500'}
+              className={
+                stats.combo > 1 ? 'animate-flame text-yellow-300' : 'text-orange-500'
+              }
             />
           }
           label="Combo"
@@ -131,7 +163,14 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
         />
 
         <StatPill
-          icon={<Clock size={22} className={state.shiftRemainingSec <= 15 ? 'text-white' : 'text-amber-700'} />}
+          icon={
+            <Clock
+              size={22}
+              className={
+                state.shiftRemainingSec <= 15 ? 'text-white' : 'text-amber-700'
+              }
+            />
+          }
           label="Ca bán còn"
           value={formatTime(state.shiftRemainingSec)}
           accent={
@@ -148,14 +187,51 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
           accent="bg-white/95 text-amber-950"
         />
 
-        <button
-          type="button"
-          onClick={handleToggleSound}
-          title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
-          className="flex items-center justify-center rounded-2xl bg-white/90 px-3 py-2 text-amber-900 shadow-md ring-1 ring-black/5 hover:bg-amber-100 active:scale-95"
+        {/* Difficulty Mode Tag */}
+        <div
+          title={`Độ khó: ${PRESET_LABEL[difficulty.preset]}${
+            difficulty.fastPaced ? ' · Tiết tấu nhanh' : ''
+          }`}
+          className="flex items-center gap-1.5 rounded-2xl bg-white/90 px-3 py-2 text-xs font-black text-amber-950 shadow-md ring-1 ring-black/5"
         >
-          {muted ? <VolumeX size={20} className="text-stone-400" /> : <Volume2 size={20} className="text-amber-700" />}
-        </button>
+          <Zap size={16} className="text-amber-600" />
+          <span>{PRESET_LABEL[difficulty.preset]}</span>
+        </div>
+
+        {/* Audio Controls */}
+        <div className="flex items-center gap-1">
+          {/* Sound SFX */}
+          <button
+            type="button"
+            onClick={handleToggleSound}
+            title={soundMuted ? 'Bật âm thanh hiệu ứng' : 'Tắt âm thanh hiệu ứng'}
+            className="flex items-center justify-center rounded-2xl bg-white/90 px-3 py-2 text-amber-900 shadow-md ring-1 ring-black/5 hover:bg-amber-100 active:scale-95"
+          >
+            {soundMuted ? (
+              <VolumeX size={18} className="text-stone-400" />
+            ) : (
+              <Volume2 size={18} className="text-amber-700" />
+            )}
+          </button>
+
+          {/* Cheerful Music BGM */}
+          <button
+            type="button"
+            onClick={handleToggleBgm}
+            title={bgmMuted ? 'Bật nhạc vui nhộn (BGM)' : 'Tắt nhạc nền (BGM)'}
+            className={`flex items-center justify-center rounded-2xl px-3 py-2 shadow-md ring-1 ring-black/5 transition-all active:scale-95 ${
+              bgmMuted
+                ? 'bg-white/90 text-stone-400 hover:bg-amber-100'
+                : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-yellow-300'
+            }`}
+          >
+            {bgmMuted ? (
+              <Music size={18} />
+            ) : (
+              <Music2 size={18} className="animate-bounce" />
+            )}
+          </button>
+        </div>
 
         {/* Dynamic Feedback Banner */}
         <div className="min-w-[260px] flex-1">
@@ -171,7 +247,9 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
         >
           {/* Avatar and Mood */}
           <div className="relative flex shrink-0 flex-col items-center justify-center rounded-2xl bg-amber-100/80 p-2 shadow-inner ring-1 ring-amber-900/10">
-            <div className="text-4xl sm:text-5xl leading-none select-none">{order.avatar}</div>
+            <div className="text-4xl sm:text-5xl leading-none select-none">
+              {order.avatar}
+            </div>
             <div className="absolute -bottom-1 -right-1 text-xl sm:text-2xl leading-none drop-shadow">
               {mood}
             </div>
@@ -227,7 +305,8 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
                         : 'bg-sky-50 text-sky-950 ring-1 ring-sky-300'
                     }`}
                   >
-                    {ok ? '✓' : '○'} {g.options.map((o) => INGREDIENT_MAP[o].name).join(' / ')}
+                    {ok ? '✓' : '○'}{' '}
+                    {g.options.map((o) => INGREDIENT_MAP[o].name).join(' / ')}
                   </span>
                 );
               })}
@@ -235,11 +314,15 @@ export default function CustomerOrderHUD({ state }: { state: GameState }) {
 
             {/* Patience Bar */}
             <div className="mt-2.5 flex items-center gap-2.5">
-              <span className="text-[11px] font-bold text-amber-900/70">Thời gian chờ:</span>
+              <span className="text-[11px] font-bold text-amber-900/70">
+                Thời gian chờ:
+              </span>
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-amber-200/60 ring-1 ring-amber-900/10">
                 <div
                   className={`h-full rounded-full transition-all duration-100 ${patienceColor}`}
-                  style={{ width: `${Math.max(0, Math.min(100, patience * 100))}%` }}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, patience * 100))}%`,
+                  }}
                 />
               </div>
               <span className="w-12 text-right text-xs font-black tabular-nums text-amber-950">

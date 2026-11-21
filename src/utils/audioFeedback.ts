@@ -1,10 +1,14 @@
 /**
- * Web Audio API synthesizer for instant game feedback without external audio assets.
- * Automatically handles browser audio context initialization upon first user gesture.
+ * Web Audio API synthesizer for instant game feedback and cheerful background music (BGM).
+ * Pure browser audio synthesis without external media asset dependencies.
  */
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
+let bgmEnabled = true;
+let isBgmRunning = false;
+let bgmTimerId: number | null = null;
+let bgmStep = 0;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -32,6 +36,31 @@ export function isSoundEnabled(): boolean {
   return soundEnabled;
 }
 
+export function setSoundEnabled(enabled: boolean) {
+  soundEnabled = enabled;
+}
+
+export function toggleBgm(): boolean {
+  bgmEnabled = !bgmEnabled;
+  if (!bgmEnabled) {
+    stopCheerfulBgm();
+  } else {
+    startCheerfulBgm();
+  }
+  return bgmEnabled;
+}
+
+export function isBgmEnabled(): boolean {
+  return bgmEnabled;
+}
+
+export function setBgmEnabled(enabled: boolean) {
+  bgmEnabled = enabled;
+  if (!bgmEnabled) {
+    stopCheerfulBgm();
+  }
+}
+
 /** Short crisp pop when adding or removing ingredient */
 export function playIngredientPop(isAdding: boolean = true) {
   if (!soundEnabled) return;
@@ -43,8 +72,8 @@ export function playIngredientPop(isAdding: boolean = true) {
   const gain = ctx.createGain();
 
   osc.type = 'sine';
-  const startFreq = isAdding ? 380 : 540;
-  const endFreq = isAdding ? 620 : 320;
+  const startFreq = isAdding ? 420 : 560;
+  const endFreq = isAdding ? 680 : 340;
 
   osc.frequency.setValueAtTime(startFreq, now);
   osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
@@ -66,7 +95,6 @@ export function playCrispyBell() {
   if (!ctx) return;
 
   const now = ctx.currentTime;
-  // Two harmonics for a warm crispy toaster ding
   [880, 1320].forEach((freq, i) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -116,8 +144,7 @@ export function playOrderSuccess(combo: number) {
   if (!ctx) return;
 
   const now = ctx.currentTime;
-  // Major chord arpeggio based on combo
-  const baseFreq = Math.min(523.25 + (combo - 1) * 35, 880); // C5 up
+  const baseFreq = Math.min(523.25 + (combo - 1) * 35, 880);
   const notes = [baseFreq, baseFreq * 1.25, baseFreq * 1.5, baseFreq * 2];
 
   notes.forEach((freq, idx) => {
@@ -185,4 +212,140 @@ export function playResetSwoosh() {
 
   osc.start(now);
   osc.stop(now + 0.12);
+}
+
+/* =========================================================================
+   CHEERFUL BACKGROUND MUSIC (BGM) SYNTHESIZER
+   Upbeat Vietnamese street-cart pentatonic / folk-pop loop
+   ========================================================================= */
+
+// Cheerful pentatonic melody notes (Hz)
+const A4 = 440.0;
+const C5 = 523.25;
+const D5 = 587.33;
+const E5 = 659.25;
+const G5 = 783.99;
+const A5 = 880.0;
+
+// Bassline notes
+const C3 = 130.81;
+const A2 = 110.0;
+const F2 = 87.31;
+const G2 = 98.0;
+
+const MELODY_SEQUENCE = [
+  // Measure 1
+  E5, G5, A5, G5, E5, D5, C5, D5,
+  // Measure 2
+  E5, E5, G5, E5, D5, C5, A4, C5,
+  // Measure 3
+  G5, A5, C5 * 2, A5, G5, E5, G5, A5,
+  // Measure 4
+  C5 * 2, A5, G5, E5, D5, E5, D5, C5,
+];
+
+const BASS_SEQUENCE = [
+  C3, C3, G2, G2, A2, A2, F2, G2,
+  C3, C3, G2, G2, A2, A2, F2, G2,
+  A2, A2, F2, F2, C3, C3, G2, G2,
+  F2, F2, G2, G2, C3, G2, C3, C3,
+];
+
+function playBgmBeat(ctx: AudioContext) {
+  if (!isBgmRunning || !bgmEnabled) return;
+
+  const now = ctx.currentTime;
+  const noteDuration = 0.17; // ~175 bpm upbeat groove
+
+  // 1. Play Lead Melody Note
+  const melodyFreq = MELODY_SEQUENCE[bgmStep % MELODY_SEQUENCE.length];
+  if (melodyFreq) {
+    const leadOsc = ctx.createOscillator();
+    const leadGain = ctx.createGain();
+
+    leadOsc.type = 'triangle';
+    leadOsc.frequency.setValueAtTime(melodyFreq, now);
+
+    // Warm soft plucky envelope
+    leadGain.gain.setValueAtTime(0.045, now);
+    leadGain.gain.exponentialRampToValueAtTime(0.001, now + noteDuration * 0.9);
+
+    leadOsc.connect(leadGain);
+    leadGain.connect(ctx.destination);
+
+    leadOsc.start(now);
+    leadOsc.stop(now + noteDuration * 0.9);
+  }
+
+  // 2. Play Bassline Note
+  const bassFreq = BASS_SEQUENCE[bgmStep % BASS_SEQUENCE.length];
+  if (bassFreq) {
+    const bassOsc = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+
+    bassOsc.type = 'sine';
+    bassOsc.frequency.setValueAtTime(bassFreq, now);
+
+    bassGain.gain.setValueAtTime(0.055, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + noteDuration * 0.85);
+
+    bassOsc.connect(bassGain);
+    bassGain.connect(ctx.destination);
+
+    bassOsc.start(now);
+    bassOsc.stop(now + noteDuration * 0.85);
+  }
+
+  // 3. Light rhythmic percussion (woodblock / shaker click on upbeat)
+  if (bgmStep % 2 === 1) {
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+
+    clickOsc.type = 'square';
+    clickOsc.frequency.setValueAtTime(980, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(240, now + 0.025);
+
+    clickGain.gain.setValueAtTime(0.015, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.025);
+  }
+
+  bgmStep = (bgmStep + 1) % (MELODY_SEQUENCE.length * 2);
+}
+
+export function startCheerfulBgm() {
+  if (isBgmRunning) return;
+  if (!bgmEnabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  isBgmRunning = true;
+  bgmStep = 0;
+
+  // Schedule loop every 175ms
+  bgmTimerId = window.setInterval(() => {
+    if (!isBgmRunning || !bgmEnabled) {
+      stopCheerfulBgm();
+      return;
+    }
+    playBgmBeat(ctx);
+  }, 175);
+}
+
+export function stopCheerfulBgm() {
+  isBgmRunning = false;
+  if (bgmTimerId !== null) {
+    window.clearInterval(bgmTimerId);
+    bgmTimerId = null;
+  }
+}
+
+export function isBgmPlaying(): boolean {
+  return isBgmRunning && bgmEnabled;
 }

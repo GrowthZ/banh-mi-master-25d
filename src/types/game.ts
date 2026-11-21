@@ -28,7 +28,12 @@ export type BanhMiRecipeId =
   | 'banh_mi_pate'
   | 'banh_mi_trung_cha'
   | 'banh_mi_heo_quay'
-  | 'banh_mi_thap_cam';
+  | 'banh_mi_thap_cam'
+  | 'banh_mi_dac_biet'
+  | 'banh_mi_heo_chay'
+  | 'banh_mi_op_la_pate'
+  | 'banh_mi_cha_bo_que'
+  | 'banh_mi_custom';
 
 export interface IngredientItem {
   id: IngredientId;
@@ -50,7 +55,7 @@ export interface IngredientAlternativeGroup {
 }
 
 export interface BanhMiRecipe {
-  id: BanhMiRecipeId;
+  id: BanhMiRecipeId | string;
   name: string;
   description: string;
   breadBase: 'banh_mi_shell';
@@ -66,7 +71,7 @@ export interface BanhMiRecipe {
 }
 
 export interface EvaluateBanhMiOrderInput {
-  recipe: BanhMiRecipe | BanhMiRecipeId;
+  recipe: BanhMiRecipe | BanhMiRecipeId | string;
   breadDoneness: BreadDoneness;
   addedIngredients: IngredientId[];
   currentCombo: number;
@@ -86,7 +91,7 @@ export interface OrderScoreBreakdown {
 }
 
 export interface OrderEvaluationResult {
-  recipeId: BanhMiRecipeId;
+  recipeId: string;
   recipeName: string;
   /** True only if bread doneness and all required/allowed ingredients match */
   isStandard: boolean;
@@ -106,3 +111,21 @@ export interface OrderEvaluationResult {
 }
 
 export type GamePhase = 'IDLE' | 'PLAYING' | 'SUMMARY';
+
+export type DifficultyPreset = 'easy' | 'normal' | 'hard' | 'rush' | 'custom';
+
+export interface DifficultySettings {
+  preset: DifficultyPreset;
+  /** Thời lượng ca bán tính theo giây (60, 90, 120, 180, 240, 300) */
+  shiftDurationSec: number;
+  /** Hiển thị gợi ý "CẦN" trên khay nguyên liệu (tắt = người chơi phải tự nhớ công thức) */
+  showIngredientHints: boolean;
+  /** Số lượng nguyên liệu ngẫu nhiên (thêm/bớt topping biến thiên) */
+  randomIngredientCount: boolean;
+  /** Xuất hiện các loại bánh mì ngẫu nhiên đặc sản ngoài 4 món chuẩn */
+  randomRecipes: boolean;
+  /** Tiết tấu game nhanh (tốc độ nướng nhanh gấp đôi, khách giục gấp) */
+  fastPaced: boolean;
+  /** Bật nhạc nền vui tươi rộn rã */
+  bgmEnabled: boolean;
+}

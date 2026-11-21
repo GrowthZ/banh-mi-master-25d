@@ -5,7 +5,6 @@ import {
   INGREDIENT_CATEGORY_LABELS,
   INGREDIENT_MAP,
   INGREDIENTS_BY_CATEGORY,
-  getRecipeById,
 } from '../data/menuOrders';
 import {
   TOAST_BURNT_MIN,
@@ -257,8 +256,8 @@ function IngredientTray({
 
   const needed = useMemo(() => {
     const set = new Set<IngredientId>();
-    if (!state.order) return set;
-    const recipe = getRecipeById(state.order.recipeId);
+    if (!state.order || !state.difficulty.showIngredientHints) return set;
+    const recipe = state.order.recipe;
     if (!state.hasBread) set.add('banh_mi_shell');
     for (const id of recipe.requiredIngredients) {
       if (!added.has(id)) set.add(id);
@@ -269,7 +268,7 @@ function IngredientTray({
       }
     }
     return set;
-  }, [state.order, state.hasBread, added]);
+  }, [state.order, state.hasBread, added, state.difficulty.showIngredientHints]);
 
   const handleIngredientClick = (id: IngredientId) => {
     const isAdding = id === 'banh_mi_shell' ? !state.hasBread : !added.has(id);

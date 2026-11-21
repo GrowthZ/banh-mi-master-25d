@@ -1,29 +1,74 @@
-import { BANH_MI_RECIPES, evaluateBanhMiOrder, getRecipeById } from '../data/menuOrders';
+import {
+  BANH_MI_RECIPES,
+  EXTENDED_BANH_MI_RECIPES,
+  evaluateBanhMiOrder,
+  generateRandomBanhMiRecipe,
+} from '../data/menuOrders';
 import type {
-  BanhMiRecipeId,
+  BanhMiRecipe,
   BreadDoneness,
+  DifficultyPreset,
+  DifficultySettings,
   GamePhase,
   IngredientId,
   OrderEvaluationResult,
 } from '../types/game';
 
-/** Độ dài một ca bán (giây). */
-export const SHIFT_DURATION_SEC = 180;
-/** Tốc độ nướng: % mỗi giây. */
-export const TOAST_RATE_PER_SEC = 15;
 /** Ngưỡng độ giòn (theo % nướng). */
 export const TOAST_CRISPY_MIN = 45;
 export const TOAST_BURNT_MIN = 92;
 /** Trừ điểm khi khách bỏ đi vì chờ quá lâu. */
-export const CUSTOMER_LEAVE_PENALTY = 10;
-/** Hệ số nhân thời gian chờ của khách (dễ hơn công thức gốc). */
-export const PATIENCE_MULTIPLIER = 1.8;
+export const CUSTOMER_LEAVE_PENALTY = 12;
 /** Thời gian hiển thị kết quả trước khi khách tiếp theo vào (giây). */
-export const RESULT_PAUSE_SEC = 1.6;
+export const RESULT_PAUSE_SEC = 1.4;
+
+export const DIFFICULTY_PRESETS: Record<
+  Exclude<DifficultyPreset, 'custom'>,
+  DifficultySettings
+> = {
+  easy: {
+    preset: 'easy',
+    shiftDurationSec: 180,
+    showIngredientHints: true,
+    randomIngredientCount: false,
+    randomRecipes: false,
+    fastPaced: false,
+    bgmEnabled: true,
+  },
+  normal: {
+    preset: 'normal',
+    shiftDurationSec: 120,
+    showIngredientHints: true,
+    randomIngredientCount: false,
+    randomRecipes: true,
+    fastPaced: false,
+    bgmEnabled: true,
+  },
+  hard: {
+    preset: 'hard',
+    shiftDurationSec: 90,
+    showIngredientHints: false,
+    randomIngredientCount: true,
+    randomRecipes: true,
+    fastPaced: true,
+    bgmEnabled: true,
+  },
+  rush: {
+    preset: 'rush',
+    shiftDurationSec: 60,
+    showIngredientHints: false,
+    randomIngredientCount: true,
+    randomRecipes: true,
+    fastPaced: true,
+    bgmEnabled: true,
+  },
+};
+
+export const DEFAULT_DIFFICULTY: DifficultySettings = DIFFICULTY_PRESETS.normal;
 
 export interface CustomerOrder {
   id: number;
-  recipeId: BanhMiRecipeId;
+  recipe: BanhMiRecipe;
   customerName: string;
   avatar: string;
   timeLimitSec: number;
@@ -52,6 +97,7 @@ export interface GameStats {
 
 export interface GameState {
   phase: GamePhase;
+  difficulty: DifficultySettings;
   shiftRemainingSec: number;
   order: CustomerOrder | null;
   /** Khoảng nghỉ giữa 2 khách (giây). >0 nghĩa là đang hiển thị kết quả. */
@@ -76,7 +122,9 @@ export type GameAction =
   | { type: 'RESET_SANDWICH' }
   | { type: 'DELIVER' }
   | { type: 'END_SHIFT' }
-  | { type: 'BACK_TO_MENU' };
+  | { type: 'BACK_TO_MENU' }
+  | { type: 'SET_DIFFICULTY'; settings: Partial<DifficultySettings> }
+  | { type: 'APPLY_PRESET'; preset: DifficultyPreset };
 
 const CUSTOMERS: ReadonlyArray<{ name: string; avatar: string }> = [
   { name: 'Cô Ba', avatar: '👩‍🦳' },
@@ -87,6 +135,8 @@ const CUSTOMERS: ReadonlyArray<{ name: string; avatar: string }> = [
   { name: 'Bạn sinh viên', avatar: '🧑‍🎓' },
   { name: 'Ông Bảy', avatar: '👴' },
   { name: 'Khách Tây', avatar: '🧑‍🦰' },
+  { name: 'Anh shipper', avatar: '🛵' },
+  { name: 'Bác tổ trưởng', avatar: '👨‍💼' },
 ];
 
 export function getBreadDoneness(toastLevel: number): BreadDoneness {
@@ -103,16 +153,36 @@ function pick<T>(list: ReadonlyArray<T>, avoid?: T): T {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function createOrder(id: number, previous: CustomerOrder | null): CustomerOrder {
-  const recipe = pick(BANH_MI_RECIPES, previous ? getRecipeById(previous.recipeId) : undefined);
+function createOrder(
+  id: number,
+  previous: CustomerOrder | null,
+  difficulty: DifficultySettings,
+): CustomerOrder {
+  let recipe: BanhMiRecipe;
+
+  // Nếu bật số lượng nguyên liệu ngẫu nhiên và tỉ lệ ngẫu nhiên xuất hiện
+  if (difficulty.randomIngredientCount && Math.random() < 0.45) {
+    recipe = generateRandomBanhMiRecipe(id);
+  } else if (difficulty.randomRecipes) {
+    recipe = pick(
+      EXTENDED_BANH_MI_RECIPES,
+      previous ? previous.recipe : undefined,
+    );
+  } else {
+    recipe = pick(BANH_MI_RECIPES, previous ? previous.recipe : undefined);
+  }
+
   const customer = pick(CUSTOMERS);
+  const patienceMultiplier = difficulty.fastPaced ? 1.25 : 1.75;
+  const timeLimit = Math.round(recipe.orderTimeLimitSec * patienceMultiplier);
+
   return {
     id,
-    recipeId: recipe.id,
+    recipe,
     customerName: customer.name,
     avatar: customer.avatar,
-    timeLimitSec: Math.round(recipe.orderTimeLimitSec * PATIENCE_MULTIPLIER),
-    timeRemainingSec: Math.round(recipe.orderTimeLimitSec * PATIENCE_MULTIPLIER),
+    timeLimitSec: timeLimit,
+    timeRemainingSec: timeLimit,
   };
 }
 
@@ -128,7 +198,8 @@ const INITIAL_STATS: GameStats = {
 
 export const initialGameState: GameState = {
   phase: 'IDLE',
-  shiftRemainingSec: SHIFT_DURATION_SEC,
+  difficulty: DEFAULT_DIFFICULTY,
+  shiftRemainingSec: DEFAULT_DIFFICULTY.shiftDurationSec,
   order: null,
   pauseRemainingSec: 0,
   hasBread: false,
@@ -162,7 +233,11 @@ function feedback(
 }
 
 function isInteractive(state: GameState): boolean {
-  return state.phase === 'PLAYING' && state.pauseRemainingSec <= 0 && state.order !== null;
+  return (
+    state.phase === 'PLAYING' &&
+    state.pauseRemainingSec <= 0 &&
+    state.order !== null
+  );
 }
 
 function tick(state: GameState, dt: number): GameState {
@@ -170,22 +245,43 @@ function tick(state: GameState, dt: number): GameState {
 
   const shiftRemainingSec = Math.max(0, state.shiftRemainingSec - dt);
   if (shiftRemainingSec <= 0) {
-    return { ...state, shiftRemainingSec: 0, isToasting: false, phase: 'SUMMARY' };
+    return {
+      ...state,
+      shiftRemainingSec: 0,
+      isToasting: false,
+      phase: 'SUMMARY',
+    };
   }
 
   let next: GameState = { ...state, shiftRemainingSec };
 
-  // Nướng bánh
+  // Nướng bánh: tốc độ nướng tăng khi fastPaced bật
+  const toastRate = state.difficulty.fastPaced ? 25 : 16;
+
   if (next.isToasting && next.hasBread) {
     const before = getBreadDoneness(next.toastLevel);
-    const toastLevel = Math.min(100, next.toastLevel + TOAST_RATE_PER_SEC * dt);
+    const toastLevel = Math.min(100, next.toastLevel + toastRate * dt);
     const after = getBreadDoneness(toastLevel);
     next = { ...next, toastLevel };
     if (before !== after) {
       if (after === 'crispy') {
-        next = { ...next, ...feedback(next, 'success', 'Vỏ bánh giòn rụm, đạt chuẩn! Lấy ra thôi!') };
+        next = {
+          ...next,
+          ...feedback(
+            next,
+            'success',
+            'Vỏ bánh giòn rụm, đạt chuẩn! Lấy ra ngay!',
+          ),
+        };
       } else if (after === 'burnt') {
-        next = { ...next, ...feedback(next, 'warning', 'Ối! Bánh bắt đầu cháy khét!') };
+        next = {
+          ...next,
+          ...feedback(
+            next,
+            'warning',
+            'Ối! Bánh bắt đầu quá lửa, hãy cẩn thận!',
+          ),
+        };
       }
     }
   }
@@ -198,7 +294,7 @@ function tick(state: GameState, dt: number): GameState {
         ...next,
         ...emptySandwich,
         pauseRemainingSec: 0,
-        order: createOrder(next.nextId, next.order),
+        order: createOrder(next.nextId, next.order, next.difficulty),
         nextId: next.nextId + 1,
       };
     }
@@ -209,7 +305,7 @@ function tick(state: GameState, dt: number): GameState {
   if (next.order) {
     const timeRemainingSec = Math.max(0, next.order.timeRemainingSec - dt);
     if (timeRemainingSec <= 0) {
-      const recipe = getRecipeById(next.order.recipeId);
+      const recipe = next.order.recipe;
       const stats: GameStats = {
         ...next.stats,
         score: next.stats.score - CUSTOMER_LEAVE_PENALTY,
@@ -226,8 +322,11 @@ function tick(state: GameState, dt: number): GameState {
         ...feedback(
           next,
           'error',
-          `${next.order.customerName} chờ lâu quá nên bỏ đi!`,
-          [`Không kịp giao ${recipe.name}`, next.stats.combo > 0 ? 'Mất combo' : ''].filter(Boolean),
+          `${next.order.customerName} giục mãi không được nên bỏ đi!`,
+          [
+            `Không kịp giao ${recipe.name}`,
+            next.stats.combo > 0 ? 'Mất chuỗi combo!' : '',
+          ].filter(Boolean),
           -CUSTOMER_LEAVE_PENALTY,
         ),
       };
@@ -243,17 +342,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START': {
       const base: GameState = {
         ...initialGameState,
+        difficulty: state.difficulty,
+        shiftRemainingSec: state.difficulty.shiftDurationSec,
         phase: 'PLAYING',
         nextId: state.nextId,
       };
       const withOrder: GameState = {
         ...base,
-        order: createOrder(base.nextId, null),
+        order: createOrder(base.nextId, null, state.difficulty),
         nextId: base.nextId + 1,
       };
       return {
         ...withOrder,
-        ...feedback(withOrder, 'info', 'Mở hàng! Đặt vỏ bánh lên lò để bắt đầu.'),
+        ...feedback(
+          withOrder,
+          'info',
+          'Mở hàng! Đặt vỏ bánh lên lò để nướng giòn.',
+        ),
       };
     }
 
@@ -263,21 +368,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'PLACE_BREAD': {
       if (!isInteractive(state)) return state;
       if (state.hasBread) {
-        return { ...state, ...feedback(state, 'info', 'Đã có vỏ bánh trên lò rồi.') };
+        return {
+          ...state,
+          ...feedback(state, 'info', 'Đã có vỏ bánh trên lò rồi.'),
+        };
       }
       return {
         ...state,
         hasBread: true,
         isToasting: true,
         toastLevel: 0,
-        ...feedback(state, 'info', 'Đặt vỏ bánh lên lò — đang nướng…'),
+        ...feedback(state, 'info', 'Đang nướng vỏ bánh mì nóng giòn…'),
       };
     }
 
     case 'TOGGLE_TOAST': {
       if (!isInteractive(state)) return state;
       if (!state.hasBread) {
-        return { ...state, ...feedback(state, 'warning', 'Chưa có vỏ bánh để nướng!') };
+        return {
+          ...state,
+          ...feedback(state, 'warning', 'Chưa có vỏ bánh để nướng!'),
+        };
       }
       const isToasting = !state.isToasting;
       return {
@@ -286,7 +397,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...feedback(
           state,
           'info',
-          isToasting ? 'Tiếp tục nướng vỏ bánh…' : 'Đã lấy bánh ra khỏi lò.',
+          isToasting ? 'Tiếp tục nướng vỏ bánh…' : 'Đã nhấc bánh ra khỏi lò.',
         ),
       };
     }
@@ -299,7 +410,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.hasBread) {
         return {
           ...state,
-          ...feedback(state, 'warning', 'Cần đặt vỏ bánh mì trước khi thêm nhân!'),
+          ...feedback(
+            state,
+            'warning',
+            'Cần đặt vỏ bánh mì trước khi kẹp nhân!',
+          ),
         };
       }
       const exists = state.addedIngredients.includes(action.id);
@@ -323,7 +438,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'DELIVER': {
       if (!isInteractive(state) || !state.order) return state;
       const result = evaluateBanhMiOrder({
-        recipe: state.order.recipeId,
+        recipe: state.order.recipe,
         breadDoneness: getBreadDoneness(state.toastLevel),
         addedIngredients: state.addedIngredients,
         currentCombo: state.stats.combo,
@@ -331,6 +446,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         timeRemainingSec: state.order.timeRemainingSec,
         timeLimitSec: state.order.timeLimitSec,
       });
+
       const stats: GameStats = {
         ...state.stats,
         score: state.stats.score + result.scoreDelta,
@@ -340,6 +456,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         perfect: state.stats.perfect + (result.isStandard ? 1 : 0),
         failed: state.stats.failed + (result.isStandard ? 0 : 1),
       };
+
       const details = result.isStandard
         ? [
             `Cơ bản +${result.breakdown.basePoints}`,
@@ -348,7 +465,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               ? [`Combo +${result.breakdown.comboBonus}`]
               : []),
           ]
-        : [...result.reasons, ...(result.comboReset ? ['Mất combo!'] : [])];
+        : [...result.reasons, ...(result.comboReset ? ['Mất chuỗi combo!'] : [])];
+
       return {
         ...state,
         isToasting: false,
@@ -360,7 +478,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           result.isStandard ? 'success' : 'error',
           result.isStandard
             ? `${result.recipeName} chuẩn vị! ${result.nextCombo > 1 ? `Combo x${result.nextCombo} 🔥` : ''}`.trim()
-            : `${result.recipeName} chưa đạt!`,
+            : `${result.recipeName} chưa đạt chuẩn!`,
           details,
           result.scoreDelta,
         ),
@@ -373,7 +491,41 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         : state;
 
     case 'BACK_TO_MENU':
-      return { ...initialGameState, nextId: state.nextId };
+      return {
+        ...initialGameState,
+        difficulty: state.difficulty,
+        shiftRemainingSec: state.difficulty.shiftDurationSec,
+        nextId: state.nextId,
+      };
+
+    case 'SET_DIFFICULTY': {
+      const nextDiff: DifficultySettings = {
+        ...state.difficulty,
+        ...action.settings,
+        preset: 'custom',
+      };
+      return {
+        ...state,
+        difficulty: nextDiff,
+        shiftRemainingSec:
+          state.phase === 'IDLE'
+            ? nextDiff.shiftDurationSec
+            : state.shiftRemainingSec,
+      };
+    }
+
+    case 'APPLY_PRESET': {
+      if (action.preset === 'custom') return state;
+      const presetSettings = DIFFICULTY_PRESETS[action.preset];
+      return {
+        ...state,
+        difficulty: presetSettings,
+        shiftRemainingSec:
+          state.phase === 'IDLE'
+            ? presetSettings.shiftDurationSec
+            : state.shiftRemainingSec,
+      };
+    }
 
     default:
       return state;

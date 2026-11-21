@@ -34,11 +34,7 @@ export const BREAD_DONENESS_LABELS: Record<BreadDoneness, string> = {
 };
 
 /**
- * 1. Danh sách nguyên liệu chuẩn, phân loại rõ theo 4 nhóm:
- * - bread_base: Vỏ bánh mì
- * - spread_sauce: Bơ, Nước tương, Nước sốt
- * - main_filling: Pate, Trứng chiên, Chả lụa, Heo quay
- * - toppings: Dưa leo, Đồ chua, Rau ngò, Ớt
+ * 1. Danh sách nguyên liệu chuẩn, phân loại rõ theo 4 nhóm
  */
 export const INGREDIENTS: readonly IngredientItem[] = [
   // Nhóm vỏ/nướng (bread_base)
@@ -178,7 +174,7 @@ export const INGREDIENTS_BY_CATEGORY: Record<
 };
 
 /**
- * 2. Danh sách 4 công thức bánh mì chuẩn theo SPEC.md
+ * 2. Bốn công thức bánh mì chuẩn bắt buộc theo SPEC.md
  */
 export const BANH_MI_RECIPES: readonly BanhMiRecipe[] = [
   {
@@ -253,34 +249,163 @@ export const BANH_MI_RECIPES: readonly BanhMiRecipe[] = [
   },
 ] as const;
 
-export const RECIPE_MAP: Record<BanhMiRecipeId, BanhMiRecipe> =
-  BANH_MI_RECIPES.reduce(
+/**
+ * Danh sách các loại bánh mì ngẫu nhiên mở rộng (Specialty Recipes)
+ */
+export const EXTENDED_BANH_MI_RECIPES: readonly BanhMiRecipe[] = [
+  ...BANH_MI_RECIPES,
+  {
+    id: 'banh_mi_dac_biet',
+    name: 'Bánh mì Đặc Biệt Sài Gòn',
+    description: 'Trọn vẹn hương vị: Bơ, Pate, Chả lụa, Heo quay, Trứng, Dưa leo, Đồ chua, Rau ngò, Nước sốt.',
+    breadBase: 'banh_mi_shell',
+    requiredDoneness: 'crispy',
+    requiredIngredients: [
+      'butter',
+      'pate',
+      'cha_lua',
+      'roast_pork',
+      'fried_egg',
+      'cucumber',
+      'pickles',
+      'cilantro',
+      'special_sauce',
+    ],
+    basePoints: 220,
+    orderTimeLimitSec: 38,
+  },
+  {
+    id: 'banh_mi_heo_chay',
+    name: 'Bánh mì Heo Quay Siêu Cay',
+    description: 'Dành cho tín đồ ăn cay: Heo quay giòn rụm, Ớt tươi cay xé lưỡi, Nước sốt đậm đà, Dưa leo, Ngò.',
+    breadBase: 'banh_mi_shell',
+    requiredDoneness: 'crispy',
+    requiredIngredients: [
+      'roast_pork',
+      'chili',
+      'special_sauce',
+      'cucumber',
+      'cilantro',
+    ],
+    basePoints: 150,
+    orderTimeLimitSec: 26,
+  },
+  {
+    id: 'banh_mi_op_la_pate',
+    name: 'Bánh mì Ốp La Bơ Pate',
+    description: 'Bữa sáng nhanh gọn: Bơ thơm nức, Pate béo ngậy, Trứng chiên lòng đào, Nước tương, Dưa leo, Ngò.',
+    breadBase: 'banh_mi_shell',
+    requiredDoneness: 'crispy',
+    requiredIngredients: [
+      'butter',
+      'pate',
+      'fried_egg',
+      'soy_sauce',
+      'cucumber',
+      'cilantro',
+    ],
+    basePoints: 130,
+    orderTimeLimitSec: 25,
+  },
+  {
+    id: 'banh_mi_cha_bo_que',
+    name: 'Bánh mì Chả Lụa Bơ Tương',
+    description: 'Đậm đà truyền thống: Bơ trứng gà, Chả lụa dày miếng, Nước tương, Dưa leo, Đồ chua, Rau ngò.',
+    breadBase: 'banh_mi_shell',
+    requiredDoneness: 'crispy',
+    requiredIngredients: [
+      'butter',
+      'cha_lua',
+      'soy_sauce',
+      'cucumber',
+      'pickles',
+      'cilantro',
+    ],
+    basePoints: 125,
+    orderTimeLimitSec: 25,
+  },
+];
+
+export const RECIPE_MAP: Record<string, BanhMiRecipe> =
+  EXTENDED_BANH_MI_RECIPES.reduce(
     (acc, recipe) => {
       acc[recipe.id] = recipe;
       return acc;
     },
-    {} as Record<BanhMiRecipeId, BanhMiRecipe>,
+    {} as Record<string, BanhMiRecipe>,
   );
 
-export function getRecipeById(recipeId: BanhMiRecipeId): BanhMiRecipe {
-  return RECIPE_MAP[recipeId];
+export function getRecipeById(recipeId: string): BanhMiRecipe {
+  return RECIPE_MAP[recipeId] ?? BANH_MI_RECIPES[0];
+}
+
+const RANDOM_TITLES = [
+  'Bánh mì Khách Tự Chọn',
+  'Bánh mì Thần Tốc',
+  'Bánh mì Đẫm Thịt',
+  'Bánh mì Vỉa Hè Đặc Biệt',
+  'Bánh mì Tươi Giòn Cay Nồng',
+  'Bánh mì Đậm Đà Phố Cổ',
+];
+
+/**
+ * Sinh một công thức bánh mì ngẫu nhiên với số lượng nguyên liệu biến thiên (3 đến 7 topping)
+ */
+export function generateRandomBanhMiRecipe(idPrefix: number): BanhMiRecipe {
+  const allFillings: IngredientId[] = [
+    'butter',
+    'soy_sauce',
+    'special_sauce',
+    'pate',
+    'fried_egg',
+    'cha_lua',
+    'roast_pork',
+    'cucumber',
+    'pickles',
+    'cilantro',
+    'chili',
+  ];
+
+  // Trộn ngẫu nhiên
+  const shuffled = [...allFillings].sort(() => Math.random() - 0.5);
+  // Số lượng topping ngẫu nhiên từ 3 đến 7
+  const count = Math.floor(Math.random() * 5) + 3;
+  const picked = shuffled.slice(0, count);
+
+  // Đảm bảo có ít nhất 1 món nhân chính để hợp lý
+  const mainFillings: IngredientId[] = ['pate', 'fried_egg', 'cha_lua', 'roast_pork'];
+  if (!picked.some((id) => mainFillings.includes(id))) {
+    const randomMain = mainFillings[Math.floor(Math.random() * mainFillings.length)];
+    picked[0] = randomMain;
+  }
+
+  const title = RANDOM_TITLES[Math.floor(Math.random() * RANDOM_TITLES.length)];
+  const basePoints = 90 + picked.length * 20;
+  const timeLimit = Math.min(42, 20 + picked.length * 3);
+
+  return {
+    id: `random_${idPrefix}`,
+    name: `${title} (${picked.length} vị)`,
+    description: `Công thức biến tấu ngẫu nhiên: ${picked.map((id) => INGREDIENT_MAP[id].name).join(', ')}.`,
+    breadBase: 'banh_mi_shell',
+    requiredDoneness: 'crispy',
+    requiredIngredients: picked,
+    basePoints,
+    orderTimeLimitSec: timeLimit,
+  };
 }
 
 const SCORING_CONFIG = {
   maxSpeedBonus: 50,
   comboBonusStep: 25,
   maxComboBonus: 150,
-  baseFailurePenalty: 10,
-  perMistakePenalty: 5,
-  maxFailurePenalty: 30,
+  baseFailurePenalty: 15,
+  perMistakePenalty: 10,
+  maxFailurePenalty: 50,
 } as const;
 
 /**
- * 3. Hàm chấm điểm ổ bánh mì so với order của khách.
- * - Kiểm tra độ giòn của vỏ bánh (chưa giòn / đạt chuẩn / quá lửa).
- * - Kiểm tra thiếu nguyên liệu bắt buộc & nhóm thay thế (VD: Pate/Bơ, Sốt/Nước tương).
- * - Kiểm tra nguyên liệu thừa/sai (VD: Thừa Ớt).
- * - Tính điểm cơ bản + thưởng tốc độ + thưởng combo, hoặc trừ điểm nhẹ & reset combo.
+ * 3. Hàm chấm điểm ổ bánh mì so với order của khách
  */
 export function evaluateBanhMiOrder(
   input: EvaluateBanhMiOrderInput,
@@ -292,7 +417,6 @@ export function evaluateBanhMiOrder(
 
   const hasBread = input.hasBread ?? true;
   const uniqueAdded = new Set<IngredientId>(input.addedIngredients);
-  // Bỏ qua mã vỏ bánh trong tập nguyên liệu nhân để tránh báo thừa khi UI gửi kèm bread_base
   uniqueAdded.delete(recipe.breadBase);
 
   const reasons: string[] = [];
@@ -336,7 +460,7 @@ export function evaluateBanhMiOrder(
     }
   }
 
-  // 4. Kiểm tra các nhóm nguyên liệu thay thế (VD: Pate/Bơ, Sốt/Nước tương)
+  // 4. Kiểm tra các nhóm nguyên liệu thay thế
   let missingGroupCount = 0;
   for (const group of alternativeGroups) {
     const hasAtLeastOne = group.options.some((optionId) =>
