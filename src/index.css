@@ -27,3 +27,12 @@
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 }
+
+@theme {
+  --animate-hint: hint 1.2s ease-in-out infinite;
+
+  @keyframes hint {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(250 204 21 / 0.7); }
+    50% { box-shadow: 0 0 0 6px rgb(250 204 21 / 0); }
+  }
+}

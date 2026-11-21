@@ -4,6 +4,7 @@ import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { INGREDIENT_MAP } from '../data/menuOrders';
 import type { IngredientId } from '../types/game';
+import VietStall from './VietStall';
 
 export interface BanhMiSceneProps {
   hasBread: boolean;
@@ -257,43 +258,6 @@ function Grill({ active }: { active: boolean }) {
   );
 }
 
-function Counter() {
-  return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.68, 0]} receiveShadow>
-        <planeGeometry args={[14, 8]} />
-        <meshStandardMaterial color="#b7793f" roughness={0.85} />
-      </mesh>
-      {/* Vân gỗ */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.675, -3.5 + i * 1]}>
-          <planeGeometry args={[14, 0.03]} />
-          <meshBasicMaterial color="#8b5a2b" transparent opacity={0.35} />
-        </mesh>
-      ))}
-      {/* Hũ đồ chua & rổ rau trang trí */}
-      <mesh position={[-3.3, -0.25, -0.8]} castShadow>
-        <cylinderGeometry args={[0.4, 0.4, 0.85, 24]} />
-        <meshStandardMaterial color="#fdba74" transparent opacity={0.75} roughness={0.1} />
-      </mesh>
-      <mesh position={[-3.3, 0.22, -0.8]}>
-        <cylinderGeometry args={[0.43, 0.43, 0.1, 24]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
-      <mesh position={[3.3, -0.45, -0.7]} castShadow>
-        <cylinderGeometry args={[0.6, 0.45, 0.45, 24]} />
-        <meshStandardMaterial color="#a16207" roughness={0.9} />
-      </mesh>
-      {Array.from({ length: 7 }, (_, i) => (
-        <mesh key={i} position={[3.3 + Math.cos(i) * 0.3, -0.18, -0.7 + Math.sin(i) * 0.3]} castShadow>
-          <icosahedronGeometry args={[0.18, 0]} />
-          <meshStandardMaterial color={i % 2 ? '#15803d' : '#22c55e'} flatShading />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function Sandwich({
   hasBread,
   isToasting,
@@ -345,12 +309,12 @@ export default function BanhMiScene(props: BanhMiSceneProps) {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 3.6, 5.2], fov: 38 }}
+      camera={{ position: [0, 3.0, 5.6], fov: 42 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
-      onCreated={({ camera }) => camera.lookAt(0, -0.25, 0)}
+      onCreated={({ camera }) => camera.lookAt(0, 0.1, -0.7)}
     >
-      <color attach="background" args={['#fde7c4']} />
-      <fog attach="fog" args={['#fde7c4', 9, 16]} />
+      <color attach="background" args={['#fde68a']} />
+      <fog attach="fog" args={['#fde68a', 10, 18]} />
       <hemisphereLight args={['#fff7e6', '#7c4a1e', 0.9]} />
       <directionalLight
         position={[3, 6, 4]}
@@ -359,11 +323,11 @@ export default function BanhMiScene(props: BanhMiSceneProps) {
         shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-5}
         shadow-camera-right={5}
-        shadow-camera-top={4}
+        shadow-camera-top={5}
         shadow-camera-bottom={-4}
         shadow-bias={-0.0005}
       />
-      <Counter />
+      <VietStall />
       <Grill active={props.isToasting && props.hasBread} />
       <Sandwich {...props} />
       <ContactShadows position={[0, -0.67, 0]} opacity={0.35} scale={12} blur={2.5} far={3} />

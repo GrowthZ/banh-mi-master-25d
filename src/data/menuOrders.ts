@@ -270,9 +270,9 @@ const SCORING_CONFIG = {
   maxSpeedBonus: 50,
   comboBonusStep: 25,
   maxComboBonus: 150,
-  baseFailurePenalty: 15,
-  perMistakePenalty: 10,
-  maxFailurePenalty: 50,
+  baseFailurePenalty: 10,
+  perMistakePenalty: 5,
+  maxFailurePenalty: 30,
 } as const;
 
 /**

@@ -20,10 +20,10 @@ function StartScreen({ onStart }: { onStart: () => void }) {
     <div className="flex min-h-full items-center justify-center p-6">
       <div className="animate-pop w-full max-w-3xl rounded-[2rem] bg-white/90 p-8 shadow-2xl ring-1 ring-amber-900/10">
         <div className="text-center">
-          <div className="text-6xl">🥖</div>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-amber-950 sm:text-5xl">Bánh Mì Master 2.5D</h1>
+          <div className="text-6xl">🏮🥖🏮</div>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-amber-950 sm:text-5xl">Bánh Mì Master Việt Nam</h1>
           <p className="mt-2 text-amber-900/80">
-            Đứng quầy bánh mì Sài Gòn trong {SHIFT_DURATION_SEC} giây — nướng giòn, kẹp đúng nhân, giao thật nhanh để giữ combo!
+            Đứng xe bánh mì vỉa hè Hà Nội trong {SHIFT_DURATION_SEC / 60} phút — nướng giòn, kẹp đúng nhân, giao thật nhanh để giữ combo!
           </p>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -42,7 +42,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         </div>
         <ol className="mt-5 space-y-1 text-sm text-amber-950">
           <li>1. Đặt vỏ bánh lên lò, lấy ra khi thanh nướng ở vùng <b className="text-green-700">Đạt chuẩn</b>.</li>
-          <li>2. Bấm nguyên liệu theo order (bấm lại để bỏ). Phím tắt 1–0, -, =.</li>
+          <li>2. Bấm nguyên liệu theo order — món khách cần sẽ <b className="text-orange-700">nhấp nháy gợi ý</b> (bấm lại để bỏ). Phím tắt 1–0, -, =.</li>
           <li>3. <b>Giao bánh</b> (Enter) — đúng & nhanh được thưởng tốc độ + combo. <b>Làm lại</b> (R) để sửa sai.</li>
         </ol>
         <button
@@ -63,7 +63,7 @@ function SummaryScreen({ state, best, onRestart }: { state: GameState; best: num
   const isRecord = stats.score > 0 && stats.score > best;
   const accuracy = stats.served > 0 ? Math.round((stats.perfect / stats.served) * 100) : 0;
   const rank =
-    stats.score >= 1200 ? 'Huyền thoại bánh mì 👑' : stats.score >= 700 ? 'Đầu bếp lành nghề 🔥' : stats.score >= 300 ? 'Phụ bếp chăm chỉ 💪' : 'Tập sự đứng quầy 🌱';
+    stats.score >= 2500 ? 'Huyền thoại bánh mì 👑' : stats.score >= 1400 ? 'Đầu bếp lành nghề 🔥' : stats.score >= 500 ? 'Phụ bếp chăm chỉ 💪' : 'Tập sự đứng quầy 🌱';
   return (
     <div className="flex min-h-full items-center justify-center p-6">
       <div className="animate-pop w-full max-w-xl rounded-[2rem] bg-white/90 p-8 text-center shadow-2xl ring-1 ring-amber-900/10">

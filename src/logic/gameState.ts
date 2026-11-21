@@ -8,14 +8,16 @@ import type {
 } from '../types/game';
 
 /** Độ dài một ca bán (giây). */
-export const SHIFT_DURATION_SEC = 90;
+export const SHIFT_DURATION_SEC = 180;
 /** Tốc độ nướng: % mỗi giây. */
-export const TOAST_RATE_PER_SEC = 22;
+export const TOAST_RATE_PER_SEC = 15;
 /** Ngưỡng độ giòn (theo % nướng). */
-export const TOAST_CRISPY_MIN = 55;
-export const TOAST_BURNT_MIN = 85;
+export const TOAST_CRISPY_MIN = 45;
+export const TOAST_BURNT_MIN = 92;
 /** Trừ điểm khi khách bỏ đi vì chờ quá lâu. */
-export const CUSTOMER_LEAVE_PENALTY = 20;
+export const CUSTOMER_LEAVE_PENALTY = 10;
+/** Hệ số nhân thời gian chờ của khách (dễ hơn công thức gốc). */
+export const PATIENCE_MULTIPLIER = 1.8;
 /** Thời gian hiển thị kết quả trước khi khách tiếp theo vào (giây). */
 export const RESULT_PAUSE_SEC = 1.6;
 
@@ -109,8 +111,8 @@ function createOrder(id: number, previous: CustomerOrder | null): CustomerOrder 
     recipeId: recipe.id,
     customerName: customer.name,
     avatar: customer.avatar,
-    timeLimitSec: recipe.orderTimeLimitSec,
-    timeRemainingSec: recipe.orderTimeLimitSec,
+    timeLimitSec: Math.round(recipe.orderTimeLimitSec * PATIENCE_MULTIPLIER),
+    timeRemainingSec: Math.round(recipe.orderTimeLimitSec * PATIENCE_MULTIPLIER),
   };
 }
 

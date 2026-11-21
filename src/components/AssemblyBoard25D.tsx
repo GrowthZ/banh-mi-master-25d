@@ -5,6 +5,7 @@ import {
   INGREDIENT_CATEGORY_LABELS,
   INGREDIENT_MAP,
   INGREDIENTS_BY_CATEGORY,
+  getRecipeById,
 } from '../data/menuOrders';
 import {
   TOAST_BURNT_MIN,
@@ -153,6 +154,18 @@ function ToastMeter({ state, dispatch }: { state: GameState; dispatch: (a: GameA
 function IngredientTray({ state, dispatch }: { state: GameState; dispatch: (a: GameAction) => void }) {
   const categories = Object.keys(INGREDIENTS_BY_CATEGORY) as IngredientCategory[];
   const added = useMemo(() => new Set(state.addedIngredients), [state.addedIngredients]);
+  // Gợi ý: những nguyên liệu khách cần mà chưa cho vào ổ bánh
+  const needed = useMemo(() => {
+    const set = new Set<IngredientId>();
+    if (!state.order) return set;
+    const recipe = getRecipeById(state.order.recipeId);
+    if (!state.hasBread) set.add('banh_mi_shell');
+    for (const id of recipe.requiredIngredients) if (!added.has(id)) set.add(id);
+    for (const g of recipe.alternativeGroups ?? []) {
+      if (!g.options.some((o) => added.has(o))) g.options.forEach((o) => set.add(o));
+    }
+    return set;
+  }, [state.order, state.hasBread, added]);
   return (
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {categories.map((cat) => (
@@ -163,21 +176,27 @@ function IngredientTray({ state, dispatch }: { state: GameState; dispatch: (a: G
           <div className="flex flex-wrap gap-1.5">
             {INGREDIENTS_BY_CATEGORY[cat].map((item) => {
               const isActive = item.id === 'banh_mi_shell' ? state.hasBread : added.has(item.id);
+              const isNeeded = needed.has(item.id);
               return (
                 <button
                   key={item.id}
                   type="button"
                   title={`${item.shortDescription} (phím ${HOTKEY_LABEL[item.id]})`}
                   onClick={() => dispatch({ type: 'TOGGLE_INGREDIENT', id: item.id })}
-                  className={`group relative flex min-w-[4.5rem] flex-1 flex-col items-center rounded-xl px-2 py-1.5 text-xs font-semibold transition active:scale-90 ${
+                  className={`group relative flex min-w-[4.5rem] flex-1 flex-col items-center rounded-xl px-2 py-1.5 text-xs font-semibold transition-transform active:scale-90 ${
                     isActive
                       ? 'bg-amber-50 text-amber-950 shadow-lg ring-2 ring-yellow-300 -translate-y-0.5'
-                      : 'bg-amber-800 text-amber-50 hover:bg-amber-700'
+                      : isNeeded
+                      ? 'animate-hint bg-orange-500 text-white ring-2 ring-yellow-300 hover:bg-orange-600'
+                      : 'bg-amber-800/70 text-amber-100/70 hover:bg-amber-700'
                   }`}
                 >
                   <span className="text-xl leading-none drop-shadow">{INGREDIENT_EMOJI[item.id]}</span>
                   <span className="mt-0.5 whitespace-nowrap">{item.name}</span>
                   <span className="absolute right-1 top-0.5 text-[9px] opacity-50">{HOTKEY_LABEL[item.id]}</span>
+                  {isNeeded && !isActive && (
+                    <span className="absolute -left-1 -top-1 rounded-full bg-yellow-300 px-1 text-[9px] font-black text-amber-950">CẦN</span>
+                  )}
                   {isActive && (
                     <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] text-white">
                       ✓
