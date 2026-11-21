@@ -38,7 +38,7 @@ function Signboard() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `900 112px ${FONT}`;
-      ctx.fillText('BÁNH MÌ SÀI GÒN', w / 2, h / 2 - 18);
+      ctx.fillText('BÁNH MÌ HÀ NỘI', w / 2, h / 2 - 18);
       ctx.font = `700 40px ${FONT}`;
       ctx.fillStyle = '#ffffff';
       ctx.fillText('★ Pate · Trứng · Chả lụa · Heo quay ★', w / 2, h / 2 + 62);

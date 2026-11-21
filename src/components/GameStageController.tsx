@@ -21,7 +21,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
       <div className="animate-pop w-full max-w-3xl rounded-[2rem] bg-white/90 p-8 shadow-2xl ring-1 ring-amber-900/10">
         <div className="text-center">
           <div className="text-6xl">🏮🥖🏮</div>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-amber-950 sm:text-5xl">Bánh Mì Master Việt Nam</h1>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-amber-950 sm:text-5xl">Bánh Mì Việt Nam</h1>
           <p className="mt-2 text-amber-900/80">
             Đứng xe bánh mì vỉa hè Hà Nội trong {SHIFT_DURATION_SEC / 60} phút — nướng giòn, kẹp đúng nhân, giao thật nhanh để giữ combo!
           </p>
