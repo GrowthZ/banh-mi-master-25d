@@ -1,7 +1,12 @@
 import { useEffect, useReducer, useRef } from 'react';
-import { Play, RotateCcw } from 'lucide-react';
+import { ChefHat, Flame, Play, RotateCcw, Trophy, Sparkles } from 'lucide-react';
 import { BANH_MI_RECIPES, INGREDIENT_MAP } from '../data/menuOrders';
-import { SHIFT_DURATION_SEC, gameReducer, initialGameState, type GameState } from '../logic/gameState';
+import {
+  SHIFT_DURATION_SEC,
+  gameReducer,
+  initialGameState,
+  type GameState,
+} from '../logic/gameState';
 import AssemblyBoard25D, { INGREDIENT_HOTKEYS } from './AssemblyBoard25D';
 import CustomerOrderHUD from './CustomerOrderHUD';
 
@@ -17,82 +22,169 @@ function readBest(): number {
 
 function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="flex min-h-full items-center justify-center p-6">
-      <div className="animate-pop w-full max-w-3xl rounded-[2rem] bg-white/90 p-8 shadow-2xl ring-1 ring-amber-900/10">
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <div className="animate-pop w-full max-w-3xl rounded-[2.5rem] bg-gradient-to-b from-white/95 via-amber-50/90 to-white/95 p-6 sm:p-10 shadow-2xl ring-1 ring-amber-900/15 backdrop-blur">
         <div className="text-center">
-          <div className="text-6xl">🏮🥖🏮</div>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-amber-950 sm:text-5xl">Bánh Mì Việt Nam</h1>
-          <p className="mt-2 text-amber-900/80">
-            Đứng xe bánh mì vỉa hè Hà Nội trong {SHIFT_DURATION_SEC / 60} phút — nướng giòn, kẹp đúng nhân, giao thật nhanh để giữ combo!
+          <div className="inline-flex items-center justify-center gap-2 text-4xl sm:text-5xl">
+            <span>🏮</span>
+            <span>🥖</span>
+            <span>🏮</span>
+          </div>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-950 sm:text-5xl">
+            BÁNH MÌ MASTER 2.5D
+          </h1>
+          <p className="mx-auto mt-2.5 max-w-xl text-sm sm:text-base font-semibold text-amber-900/80">
+            Thử thách đứng xe bánh mì vỉa hè Việt Nam trong {SHIFT_DURATION_SEC / 60} phút: nướng vỏ giòn rụm, kẹp đúng nhân, giao thật nhanh và giữ chuỗi Combo rực lửa!
           </p>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+
+        {/* 4 Recipes Showcase */}
+        <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
           {BANH_MI_RECIPES.map((r) => (
-            <div key={r.id} className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-200">
-              <div className="flex items-baseline justify-between">
-                <span className="font-extrabold text-amber-950">{r.name}</span>
-                <span className="text-xs font-bold text-amber-700">{r.basePoints}đ</span>
+            <div
+              key={r.id}
+              className="rounded-2xl bg-white/80 p-3.5 shadow-sm ring-1 ring-amber-900/10 transition-all hover:bg-amber-100/60"
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-black text-amber-950 text-base">{r.name}</span>
+                <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-xs font-black text-amber-900">
+                  +{r.basePoints}đ
+                </span>
               </div>
-              <div className="mt-1 text-xs text-amber-900/80">
+              <div className="mt-1.5 text-xs font-medium text-amber-900/80 leading-relaxed">
+                <span className="font-bold text-amber-950">Nhân:</span>{' '}
                 {r.requiredIngredients.map((id) => INGREDIENT_MAP[id].name).join(', ')}
                 {(r.alternativeGroups ?? []).map((g) => `, ${g.label}`).join('')}
               </div>
             </div>
           ))}
         </div>
-        <ol className="mt-5 space-y-1 text-sm text-amber-950">
-          <li>1. Đặt vỏ bánh lên lò, lấy ra khi thanh nướng ở vùng <b className="text-green-700">Đạt chuẩn</b>.</li>
-          <li>2. Bấm nguyên liệu theo order — món khách cần sẽ <b className="text-orange-700">nhấp nháy gợi ý</b> (bấm lại để bỏ). Phím tắt 1–0, -, =.</li>
-          <li>3. <b>Giao bánh</b> (Enter) — đúng & nhanh được thưởng tốc độ + combo. <b>Làm lại</b> (R) để sửa sai.</li>
-        </ol>
-        <button
-          type="button"
-          onClick={onStart}
-          autoFocus
-          className="mx-auto mt-6 flex items-center gap-2 rounded-2xl bg-orange-600 px-8 py-4 text-xl font-black text-white shadow-xl transition hover:bg-orange-700 active:scale-95"
-        >
-          <Play size={24} /> Bắt đầu ca bán
-        </button>
+
+        {/* Quick Instructions */}
+        <div className="mt-6 rounded-2xl bg-amber-100/70 p-4 ring-1 ring-amber-900/10">
+          <div className="text-xs font-black uppercase tracking-wider text-amber-950 mb-2">
+            💡 Bí Kíp Bán Bánh Chuẩn Vị:
+          </div>
+          <ul className="space-y-1 text-xs sm:text-sm font-semibold text-amber-950 leading-normal">
+            <li>
+              • <b>Nướng vỏ bánh:</b> Bấm <kbd className="rounded bg-white px-1.5 py-0.5 shadow-sm font-mono text-xs">1</kbd> hoặc <kbd className="rounded bg-white px-1.5 py-0.5 shadow-sm font-mono text-xs">Space</kbd> để đặt và lấy bánh khi thanh đạt vùng xanh <span className="text-emerald-700 font-extrabold">Đạt chuẩn</span>.
+            </li>
+            <li>
+              • <b>Chọn nhân:</b> Bấm phím số <kbd className="rounded bg-white px-1.5 py-0.5 shadow-sm font-mono text-xs">1–0, -, =</kbd> hoặc click chuột. Nguyên liệu order cần sẽ <span className="text-orange-700 font-extrabold">nhấp nháy CẦN</span>.
+            </li>
+            <li>
+              • <b>Giao bánh:</b> Nhấn <kbd className="rounded bg-white px-1.5 py-0.5 shadow-sm font-mono text-xs">Enter</kbd> để giao. Đạt chuẩn được cộng điểm + thưởng tốc độ + Combo.
+            </li>
+            <li>
+              • <b>Sửa sai:</b> Nhấn <kbd className="rounded bg-white px-1.5 py-0.5 shadow-sm font-mono text-xs">R</kbd> để làm lại ổ bánh mới ngay tức thì.
+            </li>
+          </ul>
+        </div>
+
+        {/* Action Button */}
+        <div className="mt-7 text-center">
+          <button
+            type="button"
+            onClick={onStart}
+            autoFocus
+            className="group inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 px-8 py-4 text-xl font-black text-white shadow-xl ring-2 ring-yellow-300 transition-all hover:brightness-110 active:scale-95"
+          >
+            <Play size={24} className="fill-white" />
+            <span>Mở Quầy Bán Bánh</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function SummaryScreen({ state, best, onRestart }: { state: GameState; best: number; onRestart: () => void }) {
+function SummaryScreen({
+  state,
+  best,
+  onRestart,
+}: {
+  state: GameState;
+  best: number;
+  onRestart: () => void;
+}) {
   const { stats } = state;
   const isRecord = stats.score > 0 && stats.score > best;
-  const accuracy = stats.served > 0 ? Math.round((stats.perfect / stats.served) * 100) : 0;
+  const accuracy =
+    stats.served > 0 ? Math.round((stats.perfect / stats.served) * 100) : 0;
+
   const rank =
-    stats.score >= 2500 ? 'Huyền thoại bánh mì 👑' : stats.score >= 1400 ? 'Đầu bếp lành nghề 🔥' : stats.score >= 500 ? 'Phụ bếp chăm chỉ 💪' : 'Tập sự đứng quầy 🌱';
+    stats.score >= 2500
+      ? 'Huyền thoại bánh mì vỉa hè 👑'
+      : stats.score >= 1400
+        ? 'Nghệ nhân kẹp bánh giòn rụm 🔥'
+        : stats.score >= 600
+          ? 'Đầu bếp bánh mì tài ba 🌟'
+          : 'Tập sự đứng quầy bánh mì 🌱';
+
   return (
-    <div className="flex min-h-full items-center justify-center p-6">
-      <div className="animate-pop w-full max-w-xl rounded-[2rem] bg-white/90 p-8 text-center shadow-2xl ring-1 ring-amber-900/10">
-        <div className="text-5xl">🏁</div>
-        <h2 className="mt-2 text-3xl font-black text-amber-950">Hết ca bán!</h2>
-        <p className="mt-1 font-semibold text-orange-700">{rank}</p>
-        <div className="mt-4 text-6xl font-black tabular-nums text-amber-600">{stats.score}</div>
-        <div className="text-sm text-amber-900/70">{isRecord ? '🎉 Kỷ lục mới!' : `Kỷ lục: ${best}`}</div>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <div className="animate-pop w-full max-w-xl rounded-[2.5rem] bg-gradient-to-b from-white/95 to-amber-50/95 p-6 sm:p-10 text-center shadow-2xl ring-1 ring-amber-900/15 backdrop-blur">
+        <div className="text-5xl">🏮🏁🏮</div>
+        <h2 className="mt-2 text-3xl font-black text-amber-950 sm:text-4xl">
+          Hết Ca Bán!
+        </h2>
+        <p className="mt-1.5 text-base font-extrabold text-orange-700">{rank}</p>
+
+        {/* Big Score Callout */}
+        <div className="mt-5 rounded-3xl bg-amber-100/60 p-4 ring-1 ring-amber-900/10">
+          <div className="text-xs font-bold uppercase tracking-wider text-amber-900/70">
+            Tổng điểm ca bán
+          </div>
+          <div className="mt-1 text-5xl sm:text-6xl font-black tabular-nums text-amber-600 drop-shadow-sm">
+            {stats.score}
+          </div>
+          <div className="mt-1.5 flex items-center justify-center gap-1.5 text-xs font-bold text-amber-900/80">
+            {isRecord ? (
+              <span className="flex items-center gap-1 text-emerald-700 font-extrabold">
+                <Sparkles size={14} /> 🎉 Kỷ lục mới tiệm bánh!
+              </span>
+            ) : (
+              <span>Kỷ lục cao nhất: {best} điểm</span>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {[
-            ['Bánh hoàn thành', stats.perfect],
-            ['Combo cao nhất', `x${stats.maxCombo}`],
-            ['Độ chính xác', `${accuracy}%`],
-            ['Khách bỏ đi', stats.walkedOut],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-200">
-              <div className="text-2xl font-black text-amber-950">{value}</div>
-              <div className="text-xs text-amber-900/70">{label}</div>
+            ['Ổ bánh đạt chuẩn', stats.perfect, <ChefHat size={16} key="c" />],
+            ['Combo cao nhất', `x${stats.maxCombo}`, <Flame size={16} key="f" />],
+            ['Độ chính xác', `${accuracy}%`, <Trophy size={16} key="t" />],
+            ['Khách bỏ đi', stats.walkedOut, <span key="w">😤</span>],
+          ].map(([label, value, icon]) => (
+            <div
+              key={label as string}
+              className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-amber-900/10"
+            >
+              <div className="flex items-center justify-center gap-1 text-amber-800">
+                {icon}
+              </div>
+              <div className="mt-1 text-2xl font-black tabular-nums text-amber-950">
+                {value}
+              </div>
+              <div className="mt-0.5 text-[11px] font-bold text-amber-900/70 leading-tight">
+                {label}
+              </div>
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={onRestart}
-          autoFocus
-          className="mx-auto mt-6 flex items-center gap-2 rounded-2xl bg-orange-600 px-8 py-4 text-xl font-black text-white shadow-xl transition hover:bg-orange-700 active:scale-95"
-        >
-          <RotateCcw size={22} /> Chơi lại
-        </button>
+
+        {/* Restart Button */}
+        <div className="mt-7">
+          <button
+            type="button"
+            onClick={onRestart}
+            autoFocus
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 px-8 py-3.5 text-xl font-black text-white shadow-xl ring-2 ring-yellow-300 transition-all hover:brightness-110 active:scale-95"
+          >
+            <RotateCcw size={22} /> Chơi Ca Mới
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -131,17 +223,33 @@ export default function GameStageController() {
     }
   }, [state.phase, state.stats.score]);
 
-  // Phím tắt
+  // Phím tắt bàn phím
   useEffect(() => {
-    if (state.phase !== 'PLAYING') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (state.phase === 'IDLE' && e.key === 'Enter') {
+        e.preventDefault();
+        dispatch({ type: 'START' });
+        return;
+      }
+
+      if (state.phase === 'SUMMARY' && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        dispatch({ type: 'START' });
+        return;
+      }
+
+      if (state.phase !== 'PLAYING') return;
+
       const ing = INGREDIENT_HOTKEYS[e.key];
       if (ing) {
         dispatch({ type: 'TOGGLE_INGREDIENT', id: ing });
       } else if (e.key === ' ') {
         e.preventDefault();
-        dispatch(state.hasBread ? { type: 'TOGGLE_TOAST' } : { type: 'PLACE_BREAD' });
+        dispatch(
+          state.hasBread ? { type: 'TOGGLE_TOAST' } : { type: 'PLACE_BREAD' },
+        );
       } else if (e.key === 'Enter') {
         e.preventDefault();
         dispatch({ type: 'DELIVER' });
@@ -149,6 +257,7 @@ export default function GameStageController() {
         dispatch({ type: 'RESET_SANDWICH' });
       }
     };
+
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [state.phase, state.hasBread]);
@@ -156,19 +265,27 @@ export default function GameStageController() {
   if (state.phase === 'IDLE') {
     return <StartScreen onStart={() => dispatch({ type: 'START' })} />;
   }
+
   if (state.phase === 'SUMMARY') {
-    return <SummaryScreen state={state} best={Math.max(prevBest.current, 0)} onRestart={() => dispatch({ type: 'START' })} />;
+    return (
+      <SummaryScreen
+        state={state}
+        best={Math.max(prevBest.current, 0)}
+        onRestart={() => dispatch({ type: 'START' })}
+      />
+    );
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-2 p-2 sm:p-3">
+    <div className="mx-auto flex h-full max-w-[1440px] flex-col gap-2 p-2 sm:p-3">
       <CustomerOrderHUD state={state} />
       <AssemblyBoard25D state={state} dispatch={dispatch} />
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between px-1 text-xs text-amber-900/60">
+        <span>Phím tắt: [1–0, -, =] Chọn nhân | [Space] Lò nướng | [Enter] Giao bánh | [R] Làm lại</span>
         <button
           type="button"
           onClick={() => dispatch({ type: 'END_SHIFT' })}
-          className="text-xs font-semibold text-amber-900/60 underline hover:text-amber-900"
+          className="font-bold underline hover:text-amber-950 transition-colors"
         >
           Kết thúc ca sớm
         </button>
